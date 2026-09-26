@@ -1,7 +1,6 @@
 # pip install openai
 import os
-from unittest import result
-from urllib import response
+
 from openai import OpenAI
 from dotenv import load_dotenv
 from .graph_service import create_relationship
@@ -40,6 +39,14 @@ A: {
 
 """
 
+SYSTEM_PROMPT_ENTITY = """
+
+You are  expert assistant who understands text.
+Understand the text and extract entities from it. Strictly in JSON format
+Eg: "Where does Priya Mehta work?"
+
+→ ["Priya Mehta"]
+"""
 
 def get_entity_relationship(user_query): 
 
@@ -59,5 +66,22 @@ def get_entity_relationship(user_query):
         create_relationship(source, target, rel_type)    
 
     return results  #return source, relationship, target in JSON format
+
+def extract_entities_from_text(text):
+    """
+    Extracts entities and relationships from the given text using the LLM.
+    Eg: "Where does Priya Mehta work?" → ["Priya Mehta"]
+    """
+    response = client.chat.completions.create(
+        model=os.getenv("TEXT_MODEL"),
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT_ENTITY},
+            {"role": "user", "content": text},
+        ],
+        temperature=0.7,
+    )
+    entities = json.loads(response.choices[0].message.content)
+    return entities
+
 
 
