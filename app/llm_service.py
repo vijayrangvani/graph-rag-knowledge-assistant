@@ -40,12 +40,22 @@ A: {
 """
 
 SYSTEM_PROMPT_ENTITY = """
+You extract important entities from a user's question.
 
-You are  expert assistant who understands text.
-Understand the text and extract entities from it. Strictly in JSON format
-Eg: "Where does Priya Mehta work?"
+Return ONLY a JSON list of entity names.
 
-→ ["Priya Mehta"]
+Examples:
+
+Question: Where does Priya Mehta work?
+Answer: ["Priya Mehta"]
+
+Question: What should I check if the execution agent is offline?
+Answer: ["Execution Agent"]
+
+Question: How are Rahul Sharma and Priya Mehta connected?
+Answer: ["Rahul Sharma", "Priya Mehta"]
+
+Do not explain anything.
 """
 
 def get_entity_relationship(user_query): 

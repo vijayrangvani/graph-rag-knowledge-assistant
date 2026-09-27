@@ -28,4 +28,21 @@ def create_relationship(source,target,relationship):
                 source=source, target=target, relationship=relationship
                 )   
 
+def get_graph():
+    with driver.session() as session:
+        result = session.run("""
+            MATCH (a:Entity)-[r]->(b:Entity)
+            RETURN a.name AS source,
+                   type(r) AS relationship,
+                   b.name AS target
+            LIMIT 100
+        """)
 
+        return [
+            {
+                "source": record["source"],
+                "relationship": record["relationship"],
+                "target": record["target"]
+            }
+            for record in result
+        ]

@@ -9,11 +9,16 @@ def add_documents(chunks, embeddings, file_name):
         for i in range(len(chunks))
     ]   
 
+    metadatas = [
+    {"source": file_name}
+    for _ in chunks]
+
     collection.add(
         ids=ids,
         documents=chunks,
-        embeddings=embeddings
-    )
+        embeddings=embeddings,
+        metadatas=metadatas)
+    
 
 
 def search_documents(embeddings,k=3):

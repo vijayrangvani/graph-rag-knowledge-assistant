@@ -1,6 +1,8 @@
 from app.embedding_service import generate_embedding
 from app.vector_store import search_documents
 from app.graph_service import driver
+from app.llm_service import extract_entities_from_text
+
 
 def retrival_service(query: str,k: int):
     """
@@ -29,3 +31,69 @@ def formatted_graph_output(results):
         target = record["b"]["name"]
         formatted_results.append(f"{source} -[{relationship}]-> {target}")   
     return formatted_results
+
+def answer_question(query):
+    vector_results = retrival_service(query, 3)
+    vector_context = vector_results["documents"][0]
+    sources = []
+
+    for metadata in vector_results["metadatas"][0]:
+        source = metadata["source"]
+        if source not in sources:
+            sources.append(source)
+
+
+
+    graph_context = []
+    entities = extract_entities_from_text(query)
+
+    for entity in entities:
+        results = graph_retrival(entity)
+        formatted_results = formatted_graph_output(results)
+        for record in formatted_results:
+            graph_context.append(record)
+
+    prompt = f"""
+    Answer the user's question using the provided Vector Context and Graph Context.
+
+    Question:
+    {query}
+
+    Vector Context:
+    {vector_context}
+
+    Graph Context:
+    {graph_context}
+
+
+    Use only the information provided in these contexts.
+    If the answer is not supported by the contexts, say that the information is not available.
+    """
+
+    from app.llm_service import client
+    import os
+
+    response = client.chat.completions.create(
+        model=os.getenv("TEXT_MODEL"),
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.2
+    )
+
+    answer = response.choices[0].message.content
+
+    if answer.strip().lower() == "the information is not available.":
+        return{
+            "Answer":answer,
+            "Sources":"No Source Available",
+            "Graph": "No Graph Context"
+        }
+    else:
+        return{
+                "Answer":answer,
+                "Sources":sources,
+                "Graph": graph_context}

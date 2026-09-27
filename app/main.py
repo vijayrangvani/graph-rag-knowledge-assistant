@@ -1,7 +1,13 @@
 from fastapi import FastAPI,File,UploadFile,HTTPException
 from pathlib import Path
 from app.pdf_service import extract_text 
+from app.ingestion_service import ingest_document
+from pydantic import BaseModel
+from app.retrival_service import answer_question
+from app.graph_service import get_graph
 
+class QuestionRequest(BaseModel):
+    question: str
 
 app = FastAPI(title="GraphRAG Application",
               version="1.0")
@@ -22,11 +28,22 @@ async def upload_PDF(file: UploadFile = File(...)):
     with open(file_path,"wb") as f:
         f.write(await file.read())
 
+    ingest_document(file_path)
+
     return {
         "filename":file.filename,
-        "message":"File uploaded Successfully.."
+        "message":"File uploaded & Ingested Successfully.."
 
     }
+
+@app.post("/ask")
+async def ask_question(request: QuestionRequest):
+    result = answer_question(request.question)
+    return result
+
+@app.get("/graph")
+async def graph():
+    return get_graph()
 
 @app.get("/extract/{file_name}")
 def extract(file_name: str):
